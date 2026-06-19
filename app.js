@@ -3,7 +3,7 @@
 // Isha Steels Enterprises — Vehicle Operations Management System
 // ═══════════════════════════════════════════════════════════════════════════════
 
-var API = 'YOUR_GAS_DEPLOYMENT_URL_HERE'; // ← Paste GAS URL after deploy
+var API = 'https://script.google.com/macros/s/AKfycbx5KLiR7lE2nuT2oW8egZhSHRTuEuPs7YGbn6RWnv4jJZOYsoWhC5IX6-a5-UcnGhJl/exec'; // ← Paste GAS URL after deploy
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var _U = null, _TOKEN = null, _D = {}, _cbIdx = 0;
