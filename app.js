@@ -7,6 +7,12 @@ var API = 'https://script.google.com/macros/s/AKfycbzH3MhOwSmrTCOdtcWBjYvArIM08S
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var _U = null, _TOKEN = null, _D = {}, _cbIdx = 0;
+var _viewStyles = { vehicles: 'grid', drivers: 'table' };
+
+function setViewStyle(module, style) {
+  _viewStyles[module] = style;
+  navigateTo(module);
+}
 
 // ── JSONP API call (CORS-free) ────────────────────────────────────────────────
 function _api(action, data, ok, err) {
@@ -72,6 +78,18 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAllData();
   } else {
     showPage('loginPage');
+  }
+
+  // Restore sidebar collapse status on boot (desktop only)
+  var isCollapsed = localStorage.getItem('ise_sb_collapsed') === 'true';
+  if (isCollapsed && window.innerWidth >= 1024) {
+    var nav = document.getElementById('sideNav');
+    var btn = document.getElementById('sbCollapseBtn');
+    if (nav) nav.classList.add('sb-collapsed');
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+      btn.title = 'Expand sidebar';
+    }
   }
 
   // Login form
@@ -287,28 +305,87 @@ function kpiCard(iconClass, label, value, valCls, colorCls) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderVehicles() {
   var v = _D.vehicles || [];
+  var style = _viewStyles.vehicles || 'grid';
+  var viewControlsHtml = 
+    '<div class="vt-group">' +
+      '<button class="vt-btn ' + (style === 'grid' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'grid\')" title="Grid View"><i class="fa-solid fa-th-large"></i></button>' +
+      '<button class="vt-btn ' + (style === 'list' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'list\')" title="List View"><i class="fa-solid fa-list"></i></button>' +
+      '<button class="vt-btn ' + (style === 'table' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'table\')" title="Table View"><i class="fa-solid fa-table"></i></button>' +
+    '</div>';
+
+  var mainContentHtml = '';
+
+  if (style === 'table') {
+    mainContentHtml = '<div class="table-wrap"><table class="data-table" id="vContainer">' +
+      '<thead><tr><th>ID</th><th>Number</th><th>Brand/Model</th><th>Type</th><th>Status</th>' +
+      '<th>Insurance</th><th>PUC</th><th>Fastag ₹</th><th>KM</th><th>Driver</th></tr></thead><tbody>' +
+      v.map(function(x){
+        var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
+        var pucDate = x.PUCExpiry,       pucCls = dateClass(pucDate, 15);
+        var stCls   = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
+        return '<tr onclick="showVehicleDetail(\''+x.VehicleID+'\')" style="cursor:pointer">' +
+          '<td><code>'+x.VehicleID+'</code></td>' +
+          '<td><strong>'+x.VehicleNo+'</strong></td>' +
+          '<td>'+x.Brand+' '+x.Model+'</td>' +
+          '<td>'+x.VehicleType+'</td>' +
+          '<td><span class="badge '+stCls+'">'+x.Status+'</span></td>' +
+          '<td class="'+insCls+'">'+x.InsuranceExpiry+'</td>' +
+          '<td class="'+pucCls+'">'+x.PUCExpiry+'</td>' +
+          '<td>₹'+(x.FastagBalance||0)+'</td>' +
+          '<td>'+(x.CurrentKM||0)+' km</td>' +
+          '<td><code>'+(x.AssignedDriverID||'—')+'</code></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  } else if (style === 'grid') {
+    mainContentHtml = '<div class="vc-grid" id="vContainer">' +
+      v.map(function(x){
+        var stCls = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
+        var iconGrad = x.Status==='Active'?'green':x.Status==='Under Service'?'orange':'red';
+        return '<div class="vc-card" onclick="showVehicleDetail(\''+x.VehicleID+'\')">' +
+          '<div class="vc-card-head">' +
+            '<div class="vc-card-icon ' + iconGrad + '"><i class="fa-solid fa-car"></i></div>' +
+            '<span class="badge '+stCls+'">'+x.Status+'</span>' +
+          '</div>' +
+          '<div class="vc-plate">'+x.VehicleNo+'</div>' +
+          '<div class="vc-model">'+x.Brand+' '+x.Model+'</div>' +
+          '<div class="vc-meta">' +
+            '<span><i class="fa-solid fa-gauge"></i> '+ (x.CurrentKM||0) +' km</span>' +
+            '<span><i class="fa-solid fa-credit-card"></i> ₹'+ (x.FastagBalance||0) +'</span>' +
+          '</div>' +
+          '<div class="vc-footer">' +
+            '<span><i class="fa-solid fa-user"></i> '+ (x.AssignedDriverID||'—') +'</span>' +
+            '<span><i class="fa-solid fa-shield-halved"></i> '+ (x.InsuranceExpiry||'—') +'</span>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  } else if (style === 'list') {
+    mainContentHtml = '<div class="vc-list" id="vContainer">' +
+      v.map(function(x){
+        var stCls = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
+        var iconGrad = x.Status==='Active'?'green':x.Status==='Under Service'?'orange':'red';
+        var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
+        return '<div class="vc-list-row" onclick="showVehicleDetail(\''+x.VehicleID+'\')">' +
+          '<div class="vc-list-icon ' + iconGrad + '"><i class="fa-solid fa-car"></i></div>' +
+          '<div class="vc-list-body">' +
+            '<div class="vc-list-title">'+x.VehicleNo+' <span class="badge '+stCls+'">'+x.Status+'</span></div>' +
+            '<div class="vc-list-sub">'+x.Brand+' '+x.Model+' &middot; Driver: '+(x.AssignedDriverID||'—')+'</div>' +
+          '</div>' +
+          '<div class="vc-list-info">' +
+            '<div class="vc-list-ins '+insCls+'">Ins: '+(x.InsuranceExpiry||'—')+'</div>' +
+            '<div class="vc-list-ftg">Fastag: ₹'+(x.FastagBalance||0)+'</div>' +
+          '</div>' +
+          '<div class="vc-list-arr"><i class="fa-solid fa-chevron-right"></i></div>' +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
   return '<div class="toolbar">' +
-    '<input id="vSearch" class="search-input" placeholder="🔍 Search vehicle..." oninput="filterTable(\'vTbl\',this.value)">' +
+    '<div class="search-wrap">' +
+      '<i class="fa-solid fa-magnifying-glass"></i>' +
+      '<input id="vSearch" class="search-input" placeholder="Search vehicle..." oninput="filterTable(\'vContainer\',this.value)">' +
+    '</div>' +
+    viewControlsHtml +
     '<button class="btn-primary" onclick="showAddVehicleForm()">+ Add Vehicle</button></div>' +
-    '<div class="table-wrap"><table class="data-table" id="vTbl">' +
-    '<thead><tr><th>ID</th><th>Number</th><th>Brand/Model</th><th>Type</th><th>Status</th>' +
-    '<th>Insurance</th><th>PUC</th><th>Fastag ₹</th><th>KM</th><th>Driver</th></tr></thead><tbody>' +
-    v.map(function(x){
-      var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
-      var pucDate = x.PUCExpiry,       pucCls = dateClass(pucDate, 15);
-      var stCls   = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
-      return '<tr onclick="showVehicleDetail(\''+x.VehicleID+'\')" style="cursor:pointer">' +
-        '<td><code>'+x.VehicleID+'</code></td>' +
-        '<td><strong>'+x.VehicleNo+'</strong></td>' +
-        '<td>'+x.Brand+' '+x.Model+'</td>' +
-        '<td>'+x.VehicleType+'</td>' +
-        '<td><span class="badge '+stCls+'">'+x.Status+'</span></td>' +
-        '<td class="'+insCls+'">'+x.InsuranceExpiry+'</td>' +
-        '<td class="'+pucCls+'">'+x.PUCExpiry+'</td>' +
-        '<td>₹'+(x.FastagBalance||0)+'</td>' +
-        '<td>'+(x.CurrentKM||0)+' km</td>' +
-        '<td><code>'+(x.AssignedDriverID||'—')+'</code></td></tr>';
-    }).join('') + '</tbody></table></div>';
+    mainContentHtml;
 }
 
 function showAddVehicleForm() {
@@ -366,22 +443,101 @@ function showVehicleDetail(id) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderDrivers() {
   var dr = _D.drivers || [];
+  var style = _viewStyles.drivers || 'table';
+  var viewControlsHtml = 
+    '<div class="vt-group">' +
+      '<button class="vt-btn ' + (style === 'grid' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'grid\')" title="Grid View"><i class="fa-solid fa-th-large"></i></button>' +
+      '<button class="vt-btn ' + (style === 'list' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'list\')" title="List View"><i class="fa-solid fa-list"></i></button>' +
+      '<button class="vt-btn ' + (style === 'table' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'table\')" title="Table View"><i class="fa-solid fa-table"></i></button>' +
+    '</div>';
+
+  var mainContentHtml = '';
+
+  if (style === 'table') {
+    mainContentHtml = '<div class="table-wrap"><table class="data-table" id="drContainer">' +
+      '<thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>License</th><th>Expiry</th><th>Blood</th><th>Status</th></tr></thead><tbody>' +
+      dr.map(function(d){
+        var licCls = dateClass(d.LicenseExpiry, 30);
+        var stCls  = d.Status==='Active'?'badge-green':'badge-red';
+        return '<tr onclick="showDriverDetail(\''+d.DriverID+'\')" style="cursor:pointer">' +
+          '<td><code>'+d.DriverID+'</code></td>' +
+          '<td><strong>'+d.Name+'</strong></td>' +
+          '<td>'+d.Mobile+'</td>' +
+          '<td>'+d.LicenseNo+'</td>' +
+          '<td class="'+licCls+'">'+d.LicenseExpiry+'</td>' +
+          '<td><span class="badge badge-blue">'+(d.BloodGroup||'—')+'</span></td>' +
+          '<td><span class="badge '+stCls+'">'+d.Status+'</span></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  } else if (style === 'grid') {
+    mainContentHtml = '<div class="vc-grid" id="drContainer">' +
+      dr.map(function(d){
+        var stCls = d.Status==='Active'?'badge-green':'badge-red';
+        var iconGrad = d.Status==='Active'?'blue':'red';
+        return '<div class="vc-card" onclick="showDriverDetail(\''+d.DriverID+'\')">' +
+          '<div class="vc-card-head">' +
+            '<div class="vc-card-icon ' + iconGrad + '"><i class="fa-solid fa-user"></i></div>' +
+            '<span class="badge '+stCls+'">'+d.Status+'</span>' +
+          '</div>' +
+          '<div class="vc-plate">'+d.Name+'</div>' +
+          '<div class="vc-model">'+d.DriverID+' &middot; '+d.Mobile+'</div>' +
+          '<div class="vc-meta">' +
+            '<span><i class="fa-solid fa-id-card"></i> '+ d.LicenseNo +'</span>' +
+          '</div>' +
+          '<div class="vc-footer">' +
+            '<span><i class="fa-solid fa-droplet"></i> '+ (d.BloodGroup||'—') +'</span>' +
+            '<span><i class="fa-solid fa-calendar-days"></i> '+ (d.LicenseExpiry||'—') +'</span>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  } else if (style === 'list') {
+    mainContentHtml = '<div class="vc-list" id="drContainer">' +
+      dr.map(function(d){
+        var stCls = d.Status==='Active'?'badge-green':'badge-red';
+        var iconGrad = d.Status==='Active'?'blue':'red';
+        var licCls = dateClass(d.LicenseExpiry, 30);
+        return '<div class="vc-list-row" onclick="showDriverDetail(\''+d.DriverID+'\')">' +
+          '<div class="vc-list-icon ' + iconGrad + '"><i class="fa-solid fa-user"></i></div>' +
+          '<div class="vc-list-body">' +
+            '<div class="vc-list-title">'+d.Name+' <span class="badge '+stCls+'">'+d.Status+'</span></div>' +
+            '<div class="vc-list-sub">ID: '+d.DriverID+' &middot; Mobile: '+d.Mobile+'</div>' +
+          '</div>' +
+          '<div class="vc-list-info">' +
+            '<div class="vc-list-ins '+licCls+'">Lic: '+(d.LicenseExpiry||'—')+'</div>' +
+            '<div class="vc-list-ftg">Blood: '+(d.BloodGroup||'—')+'</div>' +
+          '</div>' +
+          '<div class="vc-list-arr"><i class="fa-solid fa-chevron-right"></i></div>' +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
   return '<div class="toolbar">' +
-    '<input class="search-input" placeholder="🔍 Search driver..." oninput="filterTable(\'drTbl\',this.value)">' +
+    '<div class="search-wrap">' +
+      '<i class="fa-solid fa-magnifying-glass"></i>' +
+      '<input id="drSearch" class="search-input" placeholder="Search driver..." oninput="filterTable(\'drContainer\',this.value)">' +
+    '</div>' +
+    viewControlsHtml +
     '<button class="btn-primary" onclick="showAddDriverForm()">+ Add Driver</button></div>' +
-    '<div class="table-wrap"><table class="data-table" id="drTbl">' +
-    '<thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>License</th><th>Expiry</th><th>Blood</th><th>Status</th></tr></thead><tbody>' +
-    dr.map(function(d){
-      var licCls = dateClass(d.LicenseExpiry, 30);
-      var stCls  = d.Status==='Active'?'badge-green':'badge-red';
-      return '<tr><td><code>'+d.DriverID+'</code></td>' +
-        '<td><strong>'+d.Name+'</strong></td>' +
-        '<td>'+d.Mobile+'</td>' +
-        '<td>'+d.LicenseNo+'</td>' +
-        '<td class="'+licCls+'">'+d.LicenseExpiry+'</td>' +
-        '<td><span class="badge badge-blue">'+(d.BloodGroup||'—')+'</span></td>' +
-        '<td><span class="badge '+stCls+'">'+d.Status+'</span></td></tr>';
-    }).join('') + '</tbody></table></div>';
+    mainContentHtml;
+}
+
+function showDriverDetail(id) {
+  var d = (_D.drivers||[]).find(function(x){ return x.DriverID===id; });
+  if (!d) return;
+  var stCls = d.Status==='Active'?'badge-green':'badge-red';
+  showModal('👷 ' + d.Name,
+    '<div class="detail-grid">' +
+    detailRow('Driver ID', d.DriverID) +
+    detailRow('Mobile', d.Mobile) +
+    detailRow('Status', '<span class="badge '+stCls+'">'+d.Status+'</span>') +
+    detailRow('License No', d.LicenseNo) +
+    detailRow('License Expiry', d.LicenseExpiry) +
+    detailRow('Blood Group', d.BloodGroup) +
+    detailRow('Aadhaar No', d.AadhaarNo) +
+    detailRow('Joining Date', d.JoiningDate) +
+    detailRow('Salary', d.Salary ? '₹'+fmt(d.Salary) : '—') +
+    detailRow('Emergency Contact', d.EmergencyContact) +
+    detailRow('Address', d.Address) +
+    '</div>', null, 'Close');
 }
 
 function showAddDriverForm() {
@@ -1030,11 +1186,11 @@ function getFormData(fields) {
   return d;
 }
 
-function filterTable(tableId, query) {
+function filterTable(containerId, query) {
   var q = query.toLowerCase();
-  var rows = document.querySelectorAll('#' + tableId + ' tbody tr');
-  rows.forEach(function(row) {
-    row.style.display = row.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+  var items = document.querySelectorAll('#' + containerId + ' tbody tr, #' + containerId + ' .vc-card, #' + containerId + ' .vc-list-row');
+  items.forEach(function(item) {
+    item.style.display = item.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
   });
 }
 
@@ -1065,6 +1221,17 @@ function toggleSidebar() {
   var isOpen = nav.classList.contains('nav-open');
   nav.classList.toggle('nav-open');
   ov.style.display = isOpen ? 'none' : 'block';
+}
+
+function toggleSidebarCollapse() {
+  var nav = document.getElementById('sideNav');
+  var btn = document.getElementById('sbCollapseBtn');
+  var isCollapsed = nav.classList.toggle('sb-collapsed');
+  localStorage.setItem('ise_sb_collapsed', isCollapsed ? 'true' : 'false');
+  if (btn) {
+    btn.innerHTML = isCollapsed ? '<i class="fa-solid fa-chevron-right"></i>' : '<i class="fa-solid fa-chevron-left"></i>';
+    btn.title = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+  }
 }
 
 // ── ISE VOMS: Override renderDashboard with branded welcome ─────────────────
