@@ -131,22 +131,22 @@ function refreshData() {
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════════════════════
 var NAV_ITEMS = [
-  { id: 'dashboard',   label: 'Dashboard',    icon: '📊', roles: ['admin','manager','driver'] },
-  { id: 'vehicles',    label: 'Vehicles',      icon: '🚗', roles: ['admin','manager'] },
-  { id: 'drivers',     label: 'Drivers',       icon: '👷', roles: ['admin','manager'] },
-  { id: 'attendance',  label: 'Attendance',    icon: '✅', roles: ['admin','manager','driver'] },
-  { id: 'inspection',  label: 'Inspection',    icon: '🔍', roles: ['admin','manager','driver'] },
-  { id: 'cleaning',    label: 'Cleaning',      icon: '🧹', roles: ['admin','manager','driver'] },
-  { id: 'fuel',        label: 'Fuel',          icon: '⛽', roles: ['admin','manager','driver'] },
-  { id: 'trips',       label: 'Trips',         icon: '🛣️', roles: ['admin','manager','driver'] },
-  { id: 'services',    label: 'Services',      icon: '🔧', roles: ['admin','manager'] },
-  { id: 'maintenance', label: 'Maintenance',   icon: '🗓️', roles: ['admin','manager'] },
-  { id: 'dispatch',    label: 'Dispatch',      icon: '🚛', roles: ['admin','manager'] },
-  { id: 'expenses',    label: 'Expenses',      icon: '💰', roles: ['admin','manager'] },
-  { id: 'fastag',      label: 'Fastag',        icon: '🏧', roles: ['admin','manager'] },
-  { id: 'reminders',   label: 'Reminders',     icon: '🔔', roles: ['admin','manager'] },
-  { id: 'reports',     label: 'Reports',       icon: '📄', roles: ['admin','manager'] },
-  { id: 'users',       label: 'Users',         icon: '👤', roles: ['admin'] },
+  { id: 'dashboard',   label: 'Dashboard',    icon: 'fa-solid fa-chart-pie',        roles: ['admin','manager','driver'] },
+  { id: 'vehicles',    label: 'Vehicles',      icon: 'fa-solid fa-car',              roles: ['admin','manager'] },
+  { id: 'drivers',     label: 'Drivers',       icon: 'fa-solid fa-id-card',          roles: ['admin','manager'] },
+  { id: 'attendance',  label: 'Attendance',    icon: 'fa-solid fa-calendar-check',   roles: ['admin','manager','driver'] },
+  { id: 'inspection',  label: 'Inspection',    icon: 'fa-solid fa-magnifying-glass', roles: ['admin','manager','driver'] },
+  { id: 'cleaning',    label: 'Cleaning',      icon: 'fa-solid fa-spray-can-sparkles', roles: ['admin','manager','driver'] },
+  { id: 'fuel',        label: 'Fuel',          icon: 'fa-solid fa-gas-pump',         roles: ['admin','manager','driver'] },
+  { id: 'trips',       label: 'Trips',         icon: 'fa-solid fa-route',            roles: ['admin','manager','driver'] },
+  { id: 'services',    label: 'Services',      icon: 'fa-solid fa-screwdriver-wrench', roles: ['admin','manager'] },
+  { id: 'maintenance', label: 'Maintenance',   icon: 'fa-solid fa-calendar-days',    roles: ['admin','manager'] },
+  { id: 'dispatch',    label: 'Dispatch',      icon: 'fa-solid fa-truck',            roles: ['admin','manager'] },
+  { id: 'expenses',    label: 'Expenses',      icon: 'fa-solid fa-receipt',          roles: ['admin','manager'] },
+  { id: 'fastag',      label: 'Fastag',        icon: 'fa-solid fa-credit-card',      roles: ['admin','manager'] },
+  { id: 'reminders',   label: 'Reminders',     icon: 'fa-solid fa-bell',             roles: ['admin','manager'] },
+  { id: 'reports',     label: 'Reports',       icon: 'fa-solid fa-file-lines',       roles: ['admin','manager'] },
+  { id: 'users',       label: 'Users',         icon: 'fa-solid fa-users',            roles: ['admin'] },
 ];
 
 function showNav() {
@@ -159,7 +159,8 @@ function renderNav() {
   var html = NAV_ITEMS.filter(function(n){ return n.roles.indexOf(role) > -1; })
     .map(function(n) {
       return '<div class="nav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
-        '<span class="nav-icon">' + n.icon + '</span><span class="nav-label">' + n.label + '</span></div>';
+        '<div class="nav-icon"><i class="' + n.icon + '"></i></div>' +
+        '<span class="nav-label">' + n.label + '</span></div>';
     }).join('');
   document.getElementById('navItems').innerHTML = html;
   document.getElementById('userInfo').innerHTML =
@@ -194,10 +195,10 @@ function navigateTo(page) {
     users:       renderUsers,
   };
 
-  content.innerHTML = '<div class="page-loader">Loading...</div>';
+  content.innerHTML = '<div class="page-loader"><div class="spinner"></div>Loading...</div>';
   setTimeout(function() {
     if (renderers[page]) content.innerHTML = renderers[page]();
-    else content.innerHTML = '<div class="empty-state">Module coming soon.</div>';
+    else content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-wrench"></i>Module coming soon.</div>';
   }, 60);
 
   // Close sidebar on mobile
@@ -248,35 +249,37 @@ function renderDashboard() {
   var activeRem = rem.filter(function(r){ return r.Status==='Pending'; });
 
   return '<div class="dashboard-grid">' +
-    kpiCard('🚗','Total Vehicles', v.length, '') +
-    kpiCard('✅','Active',         activeV,   'text-green') +
-    kpiCard('🔧','Under Service',  underSvc,  underSvc>0?'text-orange':'') +
-    kpiCard('👷','Present Today',  presentT,  'text-green') +
-    kpiCard('❌','Absent Today',   absentT,   absentT>0?'text-orange':'') +
-    kpiCard('⛽','Fuel This Month','₹'+fmt(fuelCost),'') +
-    kpiCard('🔩','Service Cost',   '₹'+fmt(svcCost),'') +
-    kpiCard('⚠️','Insurance Due',  insDue,    insDue>0?'text-red':'text-green') +
-    kpiCard('📋','PUC Due',        pucDue,    pucDue>0?'text-red':'text-green') +
-    kpiCard('🏧','Low Fastag',     lowFtg,    lowFtg>0?'text-orange':'text-green') +
+    kpiCard('fa-solid fa-car',           'Total Vehicles',  v.length,            '',                             'blue') +
+    kpiCard('fa-solid fa-circle-check',  'Active',           activeV,             'text-green',                   'green') +
+    kpiCard('fa-solid fa-screwdriver-wrench','Under Service', underSvc,           underSvc>0?'text-orange':'',    'orange') +
+    kpiCard('fa-solid fa-user-check',    'Present Today',    presentT,            'text-green',                   'green') +
+    kpiCard('fa-solid fa-user-xmark',    'Absent Today',     absentT,             absentT>0?'text-orange':'',     'orange') +
+    kpiCard('fa-solid fa-gas-pump',      'Fuel This Month',  '\u20b9'+fmt(fuelCost), '',                          'purple') +
+    kpiCard('fa-solid fa-wrench',        'Service Cost',     '\u20b9'+fmt(svcCost),  '',                          'teal') +
+    kpiCard('fa-solid fa-shield-halved', 'Insurance Due',    insDue,              insDue>0?'text-red':'text-green',   insDue>0?'red':'green') +
+    kpiCard('fa-solid fa-clipboard-list','PUC Due',          pucDue,              pucDue>0?'text-red':'text-green',   pucDue>0?'red':'green') +
+    kpiCard('fa-solid fa-credit-card',   'Low Fastag',       lowFtg,              lowFtg>0?'text-orange':'text-green', lowFtg>0?'orange':'green') +
     '</div>' +
-    '<div class="health-card" style="border-left:5px solid '+scoreColor+'">' +
-    '<div class="health-label">🏆 Fleet Health Score</div>' +
+    '<div class="health-card" style="border-left-color:'+scoreColor+'">' +
+    '<div class="health-label"><i class="fa-solid fa-trophy"></i> Fleet Health Score</div>' +
     '<div class="health-score" style="color:'+scoreColor+'">'+health+'<span style="font-size:18px">/100</span></div>' +
-    '<div class="health-sub">' + (health>=90?'Excellent':health>=70?'Good — Monitor Alerts':'Needs Immediate Attention') + '</div>' +
+    '<div class="health-sub">' + (health>=90?'Excellent \u2014 All systems nominal':health>=70?'Good \u2014 Monitor Alerts':'Needs Immediate Attention') + '</div>' +
     '</div>' +
-    (activeRem.length ? '<div class="section-title">🔔 Active Reminders</div>' +
+    (activeRem.length ? '<div class="section-title"><i class="fa-solid fa-bell"></i> Active Reminders</div>' +
     '<div class="list-cards">' + activeRem.slice(0,5).map(function(r){
       var cls = r.Priority==='High'?'badge-red':r.Priority==='Medium'?'badge-orange':'badge-blue';
-      return '<div class="list-card"><div class="lc-title">'+(r.VehicleID||'')+'</div>' +
-        '<div class="lc-sub">'+r.ReminderType+' — '+r.ReminderDate+'</div>' +
+      var cardCls = r.Priority==='High'?'card-red':r.Priority==='Medium'?'card-orange':'card-green';
+      return '<div class="list-card '+cardCls+'"><div><div class="lc-title">'+(r.VehicleID||'')+'</div>' +
+        '<div class="lc-sub">'+r.ReminderType+' \u2014 '+r.ReminderDate+'</div></div>' +
         '<span class="badge '+cls+'">'+r.Priority+'</span></div>';
     }).join('') + '</div>' : '');
 }
 
-function kpiCard(icon, label, value, valCls, cardCls) {
-  return '<div class="kpi-card '+(cardCls||'kpi-navy')+'"><div class="kpi-icon">'+icon+'</div>' +
-    '<div class="kpi-label">'+label+'</div>' +
-    '<div class="kpi-value '+(valCls||'')+'">'+value+'</div></div>';
+function kpiCard(iconClass, label, value, valCls, colorCls) {
+  return '<div class="kpi-card">' +
+    '<div class="kpi-icon ' + (colorCls||'red') + '"><i class="' + iconClass + '"></i></div>' +
+    '<div class="kpi-label">' + label + '</div>' +
+    '<div class="kpi-value ' + (valCls||'') + '">' + value + '</div></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1072,9 +1075,9 @@ renderDashboard = function() {
   var dateStr  = today.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   var welcomeHtml =
     '<div class="dash-welcome">' +
-    '<div class="dash-welcome-icon">🏗️</div>' +
+    '<div class="dash-welcome-icon"><i class="fa-solid fa-industry"></i></div>' +
     '<div><div class="dash-welcome-title">' + greeting + ', ' + ((_U&&_U.name)||'') + '</div>' +
-    '<div class="dash-welcome-sub">' + dateStr + ' &nbsp;·&nbsp; Mandi Gobindgarh, Punjab</div></div>' +
+    '<div class="dash-welcome-sub">' + dateStr + ' &nbsp;&middot;&nbsp; Mandi Gobindgarh, Punjab</div></div>' +
     '<span class="dash-welcome-badge">ISE Fleet</span>' +
     '</div>';
   return welcomeHtml + _origRenderDashboard();
@@ -1105,10 +1108,12 @@ renderNav = function() {
   var primary = items.slice(0, 4);
   var html = primary.map(function(n) {
     return '<div class="bnav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
-      '<span class="bnav-icon">' + n.icon + '</span><span class="bnav-label">' + n.label + '</span></div>';
+      '<div class="bnav-icon-wrap"><i class="' + n.icon + '"></i></div>' +
+      '<span class="bnav-label">' + n.label + '</span></div>';
   }).join('') +
   '<div class="bnav-item" data-page="__more__" onclick="toggleSidebar()">' +
-    '<span class="bnav-icon">☰</span><span class="bnav-label">More</span></div>';
+    '<div class="bnav-icon-wrap"><i class="fa-solid fa-bars"></i></div>' +
+    '<span class="bnav-label">More</span></div>';
   var el = document.getElementById('bottomNavItems');
   if (el) el.innerHTML = html;
 };
