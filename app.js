@@ -262,7 +262,7 @@ function renderDashboard() {
     '<div class="health-card" style="border-left:5px solid '+scoreColor+'">' +
     '<div class="health-label">🏆 Fleet Health Score</div>' +
     '<div class="health-score" style="color:'+scoreColor+'">'+health+'<span style="font-size:18px">/100</span></div>' +
-    '<div class="health-sub">' + (health>=90?'Excellent':'health>=70?'Good — Monitor Alerts':'Needs Immediate Attention') + '</div>' +
+    '<div class="health-sub">' + (health>=90?'Excellent':health>=70?'Good — Monitor Alerts':'Needs Immediate Attention') + '</div>' +
     '</div>' +
     (activeRem.length ? '<div class="section-title">🔔 Active Reminders</div>' +
     '<div class="list-cards">' + activeRem.slice(0,5).map(function(r){
@@ -276,8 +276,7 @@ function renderDashboard() {
 function kpiCard(icon, label, value, valCls, cardCls) {
   return '<div class="kpi-card '+(cardCls||'kpi-navy')+'"><div class="kpi-icon">'+icon+'</div>' +
     '<div class="kpi-label">'+label+'</div>' +
-    '<div class="kpi-value '+(valCls||'")">'+value+'</div></div>';
-}
+    '<div class="kpi-value '+(valCls||'')+'">'+value+'</div></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
