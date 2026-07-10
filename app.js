@@ -1108,11 +1108,11 @@ renderNav = function() {
   var primary = items.slice(0, 4);
   var html = primary.map(function(n) {
     return '<div class="bnav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
-      '<div class="bnav-indicator"><i class="' + n.icon + '"></i></div>' +
+      '<div class="bnav-icon-box"><i class="' + n.icon + '"></i></div>' +
       '<span class="bnav-label">' + n.label + '</span></div>';
   }).join('') +
   '<div class="bnav-item" data-page="__more__" onclick="toggleSidebar()">' +
-    '<div class="bnav-indicator"><i class="fa-solid fa-bars"></i></div>' +
+    '<div class="bnav-icon-box"><i class="fa-solid fa-bars"></i></div>' +
     '<span class="bnav-label">More</span></div>';
   var el = document.getElementById('bottomNavItems');
   if (el) el.innerHTML = html;
