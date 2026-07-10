@@ -1,5 +1,3 @@
-
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // ISE VOMS — Frontend API Layer + App Controller
 // Isha Steels Enterprises — Vehicle Operations Management System
@@ -1068,7 +1066,7 @@ function toggleSidebar() {
 
 // ── ISE VOMS: Override renderDashboard with branded welcome ─────────────────
 var _origRenderDashboard = renderDashboard;
-function renderDashboard() {
+renderDashboard = function() {
   var today = new Date();
   var greeting = today.getHours() < 12 ? 'Good Morning' : today.getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
   var dateStr  = today.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
@@ -1080,7 +1078,7 @@ function renderDashboard() {
     '<span class="dash-welcome-badge">ISE Fleet</span>' +
     '</div>';
   return welcomeHtml + _origRenderDashboard();
-}
+};
 
 // ── ISE Product context in trips (auto-suggest material types) ──────────────
 var ISE_MATERIALS = [
@@ -1093,14 +1091,14 @@ var ISE_MATERIALS = [
 // ISE VOMS: Mobile bottom tab bar — mirrors the role-filtered sidebar nav
 // ═══════════════════════════════════════════════════════════════════════════════
 var _origShowNavBnav = showNav;
-function showNav() {
+showNav = function() {
   _origShowNavBnav();
   var bn = document.getElementById('bottomNav');
   if (bn) bn.style.display = 'flex';
-}
+};
 
 var _origRenderNavBnav = renderNav;
-function renderNav() {
+renderNav = function() {
   _origRenderNavBnav();
   var role  = _U ? _U.role : '';
   var items = NAV_ITEMS.filter(function(n){ return n.roles.indexOf(role) > -1; });
@@ -1113,13 +1111,13 @@ function renderNav() {
     '<span class="bnav-icon">☰</span><span class="bnav-label">More</span></div>';
   var el = document.getElementById('bottomNavItems');
   if (el) el.innerHTML = html;
-}
+};
 
 var _origNavigateToBnav = navigateTo;
-function navigateTo(page) {
+navigateTo = function(page) {
   _origNavigateToBnav(page);
   document.querySelectorAll('.bnav-item').forEach(function(el){ el.classList.remove('active'); });
   var b = document.querySelector('.bnav-item[data-page="' + page + '"]');
   if (b) b.classList.add('active');
   closeSidebar();
-}
+};
