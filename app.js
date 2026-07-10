@@ -1,3 +1,5 @@
+
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ISE VOMS — Frontend API Layer + App Controller
 // Isha Steels Enterprises — Vehicle Operations Management System
@@ -1086,3 +1088,38 @@ var ISE_MATERIALS = [
   'ERW Pipe', 'ISI Mark Pipe', 'TMT Bar', 'Square Bar',
   'MS Beam', 'Steel Plate', 'Mixed Steel Products'
 ];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ISE VOMS: Mobile bottom tab bar — mirrors the role-filtered sidebar nav
+// ═══════════════════════════════════════════════════════════════════════════════
+var _origShowNavBnav = showNav;
+function showNav() {
+  _origShowNavBnav();
+  var bn = document.getElementById('bottomNav');
+  if (bn) bn.style.display = 'flex';
+}
+
+var _origRenderNavBnav = renderNav;
+function renderNav() {
+  _origRenderNavBnav();
+  var role  = _U ? _U.role : '';
+  var items = NAV_ITEMS.filter(function(n){ return n.roles.indexOf(role) > -1; });
+  var primary = items.slice(0, 4);
+  var html = primary.map(function(n) {
+    return '<div class="bnav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
+      '<span class="bnav-icon">' + n.icon + '</span><span class="bnav-label">' + n.label + '</span></div>';
+  }).join('') +
+  '<div class="bnav-item" data-page="__more__" onclick="toggleSidebar()">' +
+    '<span class="bnav-icon">☰</span><span class="bnav-label">More</span></div>';
+  var el = document.getElementById('bottomNavItems');
+  if (el) el.innerHTML = html;
+}
+
+var _origNavigateToBnav = navigateTo;
+function navigateTo(page) {
+  _origNavigateToBnav(page);
+  document.querySelectorAll('.bnav-item').forEach(function(el){ el.classList.remove('active'); });
+  var b = document.querySelector('.bnav-item[data-page="' + page + '"]');
+  if (b) b.classList.add('active');
+  closeSidebar();
+}
