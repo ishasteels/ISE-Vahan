@@ -1,3 +1,4 @@
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ISE VOMS — Frontend API Layer + App Controller
 // Isha Steels Enterprises — Vehicle Operations Management System
@@ -7,12 +8,6 @@ var API = 'https://script.google.com/macros/s/AKfycbzH3MhOwSmrTCOdtcWBjYvArIM08S
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var _U = null, _TOKEN = null, _D = {}, _cbIdx = 0;
-var _viewStyles = { vehicles: 'grid', drivers: 'table' };
-
-function setViewStyle(module, style) {
-  _viewStyles[module] = style;
-  navigateTo(module);
-}
 
 // ── JSONP API call (CORS-free) ────────────────────────────────────────────────
 function _api(action, data, ok, err) {
@@ -29,7 +24,7 @@ function _api(action, data, ok, err) {
   timeout = setTimeout(function() {
     try { delete window[cbName]; } catch(e) {}
     if (err) err({ message: 'Request timed out' });
-    else showToast('⚠️ Request timed out', 'error');
+    else showToast('Request timed out', 'error');
   }, 25000);
   var url = API + '?callback=' + cbName + '&payload=' +
     encodeURIComponent(JSON.stringify({ action: action, data: data || {}, token: _TOKEN || '' }));
@@ -38,7 +33,7 @@ function _api(action, data, ok, err) {
   sc.onerror = function() {
     clearTimeout(timeout);
     if (err) err({ message: 'Network error' });
-    else showToast('⚠️ Network error', 'error');
+    else showToast('Network error', 'error');
   };
   document.head.appendChild(sc);
 }
@@ -78,18 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAllData();
   } else {
     showPage('loginPage');
-  }
-
-  // Restore sidebar collapse status on boot (desktop only)
-  var isCollapsed = localStorage.getItem('ise_sb_collapsed') === 'true';
-  if (isCollapsed && window.innerWidth >= 1024) {
-    var nav = document.getElementById('sideNav');
-    var btn = document.getElementById('sbCollapseBtn');
-    if (nav) nav.classList.add('sb-collapsed');
-    if (btn) {
-      btn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-      btn.title = 'Expand sidebar';
-    }
   }
 
   // Login form
@@ -146,25 +129,58 @@ function refreshData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ICON SET — clean line icons (replaces emoji across the app)
+// ═══════════════════════════════════════════════════════════════════════════════
+var ICONS = {
+  dashboard:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7" height="7.5" rx="1.6"/><rect x="3" y="13" width="7.5" height="8" rx="1.6"/><rect x="13.5" y="13" width="7" height="8" rx="1.6"/></svg>',
+  car:        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 13.5l1.4-4.6A2 2 0 0 1 6.8 7.5h10.4a2 2 0 0 1 1.9 1.4l1.4 4.6"/><rect x="2" y="13.5" width="20" height="5.5" rx="1.8"/><circle cx="7" cy="19.3" r="1.5"/><circle cx="17" cy="19.3" r="1.5"/></svg>',
+  driver:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>',
+  userx:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.5" cy="8" r="3.2"/><path d="M2.5 20a7 7 0 0 1 14 0"/><path d="M16.5 6.5l4.5 4.5M21 6.5l-4.5 4.5"/></svg>',
+  check:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.6 2.6L16.3 9"/></svg>',
+  search:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.3" cy="10.3" r="6.8"/><path d="M20 20l-4.6-4.6"/></svg>',
+  sparkle:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4.5M12 16.5V21M4 12h4.5M15.5 12H20M6.3 6.3l3.1 3.1M14.6 14.6l3.1 3.1M17.7 6.3l-3.1 3.1M9.4 14.6l-3.1 3.1"/></svg>',
+  fuel:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V6.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2V21"/><path d="M3.2 21h10.6"/><path d="M13 9.5h1.8L17.5 12v6.3a1.4 1.4 0 0 0 2.8 0V10l-2.4-2.5"/><rect x="5.8" y="7" width="4.4" height="4" rx="0.5"/></svg>',
+  route:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18.5" r="2.2"/><circle cx="18" cy="5.5" r="2.2"/><path d="M8.1 18.5h4.9a3.2 3.2 0 0 0 3.2-3.2v0a3.2 3.2 0 0 0-3.2-3.2H10a3.2 3.2 0 0 1-3.2-3.2v0A3.2 3.2 0 0 1 10 5.9h5.9"/></svg>',
+  wrench:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.6a4.2 4.2 0 0 0-5.6 5.6L3.5 17.8l2.7 2.7 5.6-5.6a4.2 4.2 0 0 0 5.6-5.6l-2.7 2.7-2.7-2.7z"/></svg>',
+  calendar:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v4M16 3v4"/></svg>',
+  clock:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 3v4M16 3v4"/><circle cx="16" cy="15.5" r="3.1"/><path d="M16 14.2v1.4l1 .9"/></svg>',
+  truck:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.3" y="7.5" width="12.7" height="9.5" rx="1.4"/><path d="M14 10.3h4l3.2 3.6v3.1H14z"/><circle cx="6.2" cy="18.7" r="1.7"/><circle cx="17.6" cy="18.7" r="1.7"/></svg>',
+  wallet:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.2h18"/><circle cx="16.6" cy="14.4" r="1.1"/></svg>',
+  card:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.3" y="5" width="19.4" height="14" rx="2.4"/><path d="M2.3 9.8h19.4"/><path d="M6 14.3h4.2"/></svg>',
+  bell:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.2a6 6 0 0 1 12 0c0 4 1.5 5.4 1.5 5.4h-15S6 13.2 6 9.2z"/><path d="M10 18.6a2 2 0 0 0 4 0"/></svg>',
+  file:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.3 2.5h7.4l4.3 4.3V21a1 1 0 0 1-1 1h-10.7a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1z"/><path d="M13.7 2.5V7h4.3"/><path d="M8.3 12h7.4M8.3 15.4h7.4M8.3 18.8h4.6"/></svg>',
+  users:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.7 20a6.3 6.3 0 0 1 12.6 0"/><circle cx="17.6" cy="9" r="2.4"/><path d="M15.7 14.3A5.2 5.2 0 0 1 21.3 20"/></svg>',
+  building:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9.2L9 5v4L15 5v16"/><path d="M15 21v-9.5h6V21"/><path d="M6.5 12.5h1M6.5 15.5h1M10.5 12.5h1M10.5 15.5h1"/></svg>',
+  alert:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v6"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/></svg>',
+  trophy:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5h9v4a4.5 4.5 0 0 1-9 0v-4z"/><path d="M9.3 13L8 21h8l-1.3-8"/><path d="M7.5 6H4.7a1.2 1.2 0 0 0-1.2 1.2c0 2.8 2.2 4.3 4 4.3M16.5 6h2.8a1.2 1.2 0 0 1 1.2 1.2c0 2.8-2.2 4.3-4 4.3"/></svg>',
+  plus:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 4.5v15M4.5 12h15"/></svg>',
+  refresh:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.6-5.9M20.5 12a8.5 8.5 0 0 1-14.6 5.9"/><path d="M18.1 3.7v3.4h-3.4M5.9 20.3v-3.4h3.4"/></svg>',
+  power:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8.5"/><path d="M6.5 6.3a8 8 0 1 0 11 0"/></svg>',
+  menu:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/></svg>',
+  arrow:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+};
+function icon(key) { return ICONS[key] || ''; }
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════════════════════
 var NAV_ITEMS = [
-  { id: 'dashboard',   label: 'Dashboard',    icon: 'fa-solid fa-chart-pie',        roles: ['admin','manager','driver'] },
-  { id: 'vehicles',    label: 'Vehicles',      icon: 'fa-solid fa-car',              roles: ['admin','manager'] },
-  { id: 'drivers',     label: 'Drivers',       icon: 'fa-solid fa-id-card',          roles: ['admin','manager'] },
-  { id: 'attendance',  label: 'Attendance',    icon: 'fa-solid fa-calendar-check',   roles: ['admin','manager','driver'] },
-  { id: 'inspection',  label: 'Inspection',    icon: 'fa-solid fa-magnifying-glass', roles: ['admin','manager','driver'] },
-  { id: 'cleaning',    label: 'Cleaning',      icon: 'fa-solid fa-spray-can-sparkles', roles: ['admin','manager','driver'] },
-  { id: 'fuel',        label: 'Fuel',          icon: 'fa-solid fa-gas-pump',         roles: ['admin','manager','driver'] },
-  { id: 'trips',       label: 'Trips',         icon: 'fa-solid fa-route',            roles: ['admin','manager','driver'] },
-  { id: 'services',    label: 'Services',      icon: 'fa-solid fa-screwdriver-wrench', roles: ['admin','manager'] },
-  { id: 'maintenance', label: 'Maintenance',   icon: 'fa-solid fa-calendar-days',    roles: ['admin','manager'] },
-  { id: 'dispatch',    label: 'Dispatch',      icon: 'fa-solid fa-truck',            roles: ['admin','manager'] },
-  { id: 'expenses',    label: 'Expenses',      icon: 'fa-solid fa-receipt',          roles: ['admin','manager'] },
-  { id: 'fastag',      label: 'Fastag',        icon: 'fa-solid fa-credit-card',      roles: ['admin','manager'] },
-  { id: 'reminders',   label: 'Reminders',     icon: 'fa-solid fa-bell',             roles: ['admin','manager'] },
-  { id: 'reports',     label: 'Reports',       icon: 'fa-solid fa-file-lines',       roles: ['admin','manager'] },
-  { id: 'users',       label: 'Users',         icon: 'fa-solid fa-users',            roles: ['admin'] },
+  { id: 'dashboard',   label: 'Dashboard',    icon: 'dashboard', roles: ['admin','manager','driver'] },
+  { id: 'vehicles',    label: 'Vehicles',      icon: 'car', roles: ['admin','manager'] },
+  { id: 'drivers',     label: 'Drivers',       icon: 'driver', roles: ['admin','manager'] },
+  { id: 'attendance',  label: 'Attendance',    icon: 'check', roles: ['admin','manager','driver'] },
+  { id: 'inspection',  label: 'Inspection',    icon: 'search', roles: ['admin','manager','driver'] },
+  { id: 'cleaning',    label: 'Cleaning',      icon: 'sparkle', roles: ['admin','manager','driver'] },
+  { id: 'fuel',        label: 'Fuel',          icon: 'fuel', roles: ['admin','manager','driver'] },
+  { id: 'trips',       label: 'Trips',         icon: 'route', roles: ['admin','manager','driver'] },
+  { id: 'services',    label: 'Services',      icon: 'wrench', roles: ['admin','manager'] },
+  { id: 'maintenance', label: 'Maintenance',   icon: 'clock', roles: ['admin','manager'] },
+  { id: 'dispatch',    label: 'Dispatch',      icon: 'truck', roles: ['admin','manager'] },
+  { id: 'expenses',    label: 'Expenses',      icon: 'wallet', roles: ['admin','manager'] },
+  { id: 'fastag',      label: 'Fastag',        icon: 'card', roles: ['admin','manager'] },
+  { id: 'reminders',   label: 'Reminders',     icon: 'bell', roles: ['admin','manager'] },
+  { id: 'reports',     label: 'Reports',       icon: 'file', roles: ['admin','manager'] },
+  { id: 'users',       label: 'Users',         icon: 'users', roles: ['admin'] },
 ];
 
 function showNav() {
@@ -177,8 +193,7 @@ function renderNav() {
   var html = NAV_ITEMS.filter(function(n){ return n.roles.indexOf(role) > -1; })
     .map(function(n) {
       return '<div class="nav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
-        '<div class="nav-icon"><i class="' + n.icon + '"></i></div>' +
-        '<span class="nav-label">' + n.label + '</span></div>';
+        '<span class="nav-icon">' + icon(n.icon) + '</span><span class="nav-label">' + n.label + '</span></div>';
     }).join('');
   document.getElementById('navItems').innerHTML = html;
   document.getElementById('userInfo').innerHTML =
@@ -186,6 +201,7 @@ function renderNav() {
     '<div><div class="user-name">' + (_U.name||'') + '</div>' +
     '<div class="user-role">' + (_U.role||'') + '</div></div>';
 }
+
 
 function navigateTo(page) {
   document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
@@ -213,10 +229,10 @@ function navigateTo(page) {
     users:       renderUsers,
   };
 
-  content.innerHTML = '<div class="page-loader"><div class="spinner"></div>Loading...</div>';
+  content.innerHTML = '<div class="page-loader">Loading...</div>';
   setTimeout(function() {
     if (renderers[page]) content.innerHTML = renderers[page]();
-    else content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-wrench"></i>Module coming soon.</div>';
+    else content.innerHTML = '<div class="empty-state">Module coming soon.</div>';
   }, 60);
 
   // Close sidebar on mobile
@@ -267,37 +283,35 @@ function renderDashboard() {
   var activeRem = rem.filter(function(r){ return r.Status==='Pending'; });
 
   return '<div class="dashboard-grid">' +
-    kpiCard('fa-solid fa-car',           'Total Vehicles',  v.length,            '',                             'blue') +
-    kpiCard('fa-solid fa-circle-check',  'Active',           activeV,             'text-green',                   'green') +
-    kpiCard('fa-solid fa-screwdriver-wrench','Under Service', underSvc,           underSvc>0?'text-orange':'',    'orange') +
-    kpiCard('fa-solid fa-user-check',    'Present Today',    presentT,            'text-green',                   'green') +
-    kpiCard('fa-solid fa-user-xmark',    'Absent Today',     absentT,             absentT>0?'text-orange':'',     'orange') +
-    kpiCard('fa-solid fa-gas-pump',      'Fuel This Month',  '\u20b9'+fmt(fuelCost), '',                          'purple') +
-    kpiCard('fa-solid fa-wrench',        'Service Cost',     '\u20b9'+fmt(svcCost),  '',                          'teal') +
-    kpiCard('fa-solid fa-shield-halved', 'Insurance Due',    insDue,              insDue>0?'text-red':'text-green',   insDue>0?'red':'green') +
-    kpiCard('fa-solid fa-clipboard-list','PUC Due',          pucDue,              pucDue>0?'text-red':'text-green',   pucDue>0?'red':'green') +
-    kpiCard('fa-solid fa-credit-card',   'Low Fastag',       lowFtg,              lowFtg>0?'text-orange':'text-green', lowFtg>0?'orange':'green') +
+    kpiCard('car','Total Vehicles', v.length, '') +
+    kpiCard('check','Active',         activeV,   'text-green') +
+    kpiCard('wrench','Under Service',  underSvc,  underSvc>0?'text-orange':'') +
+    kpiCard('driver','Present Today',  presentT,  'text-green') +
+    kpiCard('userx','Absent Today',   absentT,   absentT>0?'text-orange':'') +
+    kpiCard('fuel','Fuel This Month','₹'+fmt(fuelCost),'') +
+    kpiCard('wrench','Service Cost',   '₹'+fmt(svcCost),'') +
+    kpiCard('alert','Insurance Due',  insDue,    insDue>0?'text-red':'text-green') +
+    kpiCard('file','PUC Due',        pucDue,    pucDue>0?'text-red':'text-green') +
+    kpiCard('card','Low Fastag',     lowFtg,    lowFtg>0?'text-orange':'text-green') +
     '</div>' +
-    '<div class="health-card" style="border-left-color:'+scoreColor+'">' +
-    '<div class="health-label"><i class="fa-solid fa-trophy"></i> Fleet Health Score</div>' +
+    '<div class="health-card" style="border-left:5px solid '+scoreColor+'">' +
+    '<div class="health-label"><span class="inline-ic">'+icon('trophy')+'</span>Fleet Health Score</div>' +
     '<div class="health-score" style="color:'+scoreColor+'">'+health+'<span style="font-size:18px">/100</span></div>' +
-    '<div class="health-sub">' + (health>=90?'Excellent \u2014 All systems nominal':health>=70?'Good \u2014 Monitor Alerts':'Needs Immediate Attention') + '</div>' +
+    '<div class="health-sub">' + (health>=90?'Excellent':health>=70?'Good — Monitor Alerts':'Needs Immediate Attention') + '</div>' +
     '</div>' +
-    (activeRem.length ? '<div class="section-title"><i class="fa-solid fa-bell"></i> Active Reminders</div>' +
+    (activeRem.length ? '<div class="section-title"><span class="inline-ic">'+icon('bell')+'</span>Active Reminders</div>' +
     '<div class="list-cards">' + activeRem.slice(0,5).map(function(r){
       var cls = r.Priority==='High'?'badge-red':r.Priority==='Medium'?'badge-orange':'badge-blue';
-      var cardCls = r.Priority==='High'?'card-red':r.Priority==='Medium'?'card-orange':'card-green';
-      return '<div class="list-card '+cardCls+'"><div><div class="lc-title">'+(r.VehicleID||'')+'</div>' +
-        '<div class="lc-sub">'+r.ReminderType+' \u2014 '+r.ReminderDate+'</div></div>' +
+      return '<div class="list-card"><div class="lc-title">'+(r.VehicleID||'')+'</div>' +
+        '<div class="lc-sub">'+r.ReminderType+' — '+r.ReminderDate+'</div>' +
         '<span class="badge '+cls+'">'+r.Priority+'</span></div>';
     }).join('') + '</div>' : '');
 }
 
-function kpiCard(iconClass, label, value, valCls, colorCls) {
-  return '<div class="kpi-card">' +
-    '<div class="kpi-icon ' + (colorCls||'red') + '"><i class="' + iconClass + '"></i></div>' +
-    '<div class="kpi-label">' + label + '</div>' +
-    '<div class="kpi-value ' + (valCls||'') + '">' + value + '</div></div>';
+function kpiCard(iconKey, label, value, valCls, cardCls) {
+  return '<div class="kpi-card '+(cardCls||'kpi-navy')+'"><div class="kpi-icon">'+icon(iconKey)+'</div>' +
+    '<div class="kpi-label">'+label+'</div>' +
+    '<div class="kpi-value '+(valCls||'')+'">'+value+'</div></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -305,87 +319,28 @@ function kpiCard(iconClass, label, value, valCls, colorCls) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderVehicles() {
   var v = _D.vehicles || [];
-  var style = _viewStyles.vehicles || 'grid';
-  var viewControlsHtml = 
-    '<div class="vt-group">' +
-      '<button class="vt-btn ' + (style === 'grid' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'grid\')" title="Grid View"><i class="fa-solid fa-th-large"></i></button>' +
-      '<button class="vt-btn ' + (style === 'list' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'list\')" title="List View"><i class="fa-solid fa-list"></i></button>' +
-      '<button class="vt-btn ' + (style === 'table' ? 'vt-active' : '') + '" onclick="setViewStyle(\'vehicles\', \'table\')" title="Table View"><i class="fa-solid fa-table"></i></button>' +
-    '</div>';
-
-  var mainContentHtml = '';
-
-  if (style === 'table') {
-    mainContentHtml = '<div class="table-wrap"><table class="data-table" id="vContainer">' +
-      '<thead><tr><th>ID</th><th>Number</th><th>Brand/Model</th><th>Type</th><th>Status</th>' +
-      '<th>Insurance</th><th>PUC</th><th>Fastag ₹</th><th>KM</th><th>Driver</th></tr></thead><tbody>' +
-      v.map(function(x){
-        var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
-        var pucDate = x.PUCExpiry,       pucCls = dateClass(pucDate, 15);
-        var stCls   = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
-        return '<tr onclick="showVehicleDetail(\''+x.VehicleID+'\')" style="cursor:pointer">' +
-          '<td><code>'+x.VehicleID+'</code></td>' +
-          '<td><strong>'+x.VehicleNo+'</strong></td>' +
-          '<td>'+x.Brand+' '+x.Model+'</td>' +
-          '<td>'+x.VehicleType+'</td>' +
-          '<td><span class="badge '+stCls+'">'+x.Status+'</span></td>' +
-          '<td class="'+insCls+'">'+x.InsuranceExpiry+'</td>' +
-          '<td class="'+pucCls+'">'+x.PUCExpiry+'</td>' +
-          '<td>₹'+(x.FastagBalance||0)+'</td>' +
-          '<td>'+(x.CurrentKM||0)+' km</td>' +
-          '<td><code>'+(x.AssignedDriverID||'—')+'</code></td></tr>';
-      }).join('') + '</tbody></table></div>';
-  } else if (style === 'grid') {
-    mainContentHtml = '<div class="vc-grid" id="vContainer">' +
-      v.map(function(x){
-        var stCls = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
-        var iconGrad = x.Status==='Active'?'green':x.Status==='Under Service'?'orange':'red';
-        return '<div class="vc-card" onclick="showVehicleDetail(\''+x.VehicleID+'\')">' +
-          '<div class="vc-card-head">' +
-            '<div class="vc-card-icon ' + iconGrad + '"><i class="fa-solid fa-car"></i></div>' +
-            '<span class="badge '+stCls+'">'+x.Status+'</span>' +
-          '</div>' +
-          '<div class="vc-plate">'+x.VehicleNo+'</div>' +
-          '<div class="vc-model">'+x.Brand+' '+x.Model+'</div>' +
-          '<div class="vc-meta">' +
-            '<span><i class="fa-solid fa-gauge"></i> '+ (x.CurrentKM||0) +' km</span>' +
-            '<span><i class="fa-solid fa-credit-card"></i> ₹'+ (x.FastagBalance||0) +'</span>' +
-          '</div>' +
-          '<div class="vc-footer">' +
-            '<span><i class="fa-solid fa-user"></i> '+ (x.AssignedDriverID||'—') +'</span>' +
-            '<span><i class="fa-solid fa-shield-halved"></i> '+ (x.InsuranceExpiry||'—') +'</span>' +
-          '</div>' +
-        '</div>';
-      }).join('') + '</div>';
-  } else if (style === 'list') {
-    mainContentHtml = '<div class="vc-list" id="vContainer">' +
-      v.map(function(x){
-        var stCls = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
-        var iconGrad = x.Status==='Active'?'green':x.Status==='Under Service'?'orange':'red';
-        var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
-        return '<div class="vc-list-row" onclick="showVehicleDetail(\''+x.VehicleID+'\')">' +
-          '<div class="vc-list-icon ' + iconGrad + '"><i class="fa-solid fa-car"></i></div>' +
-          '<div class="vc-list-body">' +
-            '<div class="vc-list-title">'+x.VehicleNo+' <span class="badge '+stCls+'">'+x.Status+'</span></div>' +
-            '<div class="vc-list-sub">'+x.Brand+' '+x.Model+' &middot; Driver: '+(x.AssignedDriverID||'—')+'</div>' +
-          '</div>' +
-          '<div class="vc-list-info">' +
-            '<div class="vc-list-ins '+insCls+'">Ins: '+(x.InsuranceExpiry||'—')+'</div>' +
-            '<div class="vc-list-ftg">Fastag: ₹'+(x.FastagBalance||0)+'</div>' +
-          '</div>' +
-          '<div class="vc-list-arr"><i class="fa-solid fa-chevron-right"></i></div>' +
-        '</div>';
-      }).join('') + '</div>';
-  }
-
   return '<div class="toolbar">' +
-    '<div class="search-wrap">' +
-      '<i class="fa-solid fa-magnifying-glass"></i>' +
-      '<input id="vSearch" class="search-input" placeholder="Search vehicle..." oninput="filterTable(\'vContainer\',this.value)">' +
-    '</div>' +
-    viewControlsHtml +
+    '<input id="vSearch" class="search-input" placeholder="Search vehicle..." oninput="filterTable(\'vTbl\',this.value)">' +
     '<button class="btn-primary" onclick="showAddVehicleForm()">+ Add Vehicle</button></div>' +
-    mainContentHtml;
+    '<div class="table-wrap"><table class="data-table" id="vTbl">' +
+    '<thead><tr><th>ID</th><th>Number</th><th>Brand/Model</th><th>Type</th><th>Status</th>' +
+    '<th>Insurance</th><th>PUC</th><th>Fastag ₹</th><th>KM</th><th>Driver</th></tr></thead><tbody>' +
+    v.map(function(x){
+      var insDate = x.InsuranceExpiry, insCls = dateClass(insDate, 30);
+      var pucDate = x.PUCExpiry,       pucCls = dateClass(pucDate, 15);
+      var stCls   = x.Status==='Active'?'badge-green':x.Status==='Under Service'?'badge-orange':'badge-red';
+      return '<tr onclick="showVehicleDetail(\''+x.VehicleID+'\')" style="cursor:pointer">' +
+        '<td><code>'+x.VehicleID+'</code></td>' +
+        '<td><strong>'+x.VehicleNo+'</strong></td>' +
+        '<td>'+x.Brand+' '+x.Model+'</td>' +
+        '<td>'+x.VehicleType+'</td>' +
+        '<td><span class="badge '+stCls+'">'+x.Status+'</span></td>' +
+        '<td class="'+insCls+'">'+x.InsuranceExpiry+'</td>' +
+        '<td class="'+pucCls+'">'+x.PUCExpiry+'</td>' +
+        '<td>₹'+(x.FastagBalance||0)+'</td>' +
+        '<td>'+(x.CurrentKM||0)+' km</td>' +
+        '<td><code>'+(x.AssignedDriverID||'—')+'</code></td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 
 function showAddVehicleForm() {
@@ -425,7 +380,7 @@ function showVehicleDetail(id) {
   var v = (_D.vehicles||[]).find(function(x){ return x.VehicleID===id; });
   if (!v) return;
   var stCls = v.Status==='Active'?'badge-green':v.Status==='Under Service'?'badge-orange':'badge-red';
-  showModal('🚗 ' + v.VehicleNo,
+  showModal(v.VehicleNo,
     '<div class="detail-grid">' +
     detailRow('ID', v.VehicleID) + detailRow('Type', v.VehicleType) +
     detailRow('Brand', v.Brand+' '+v.Model) + detailRow('Reg No', v.RegistrationNo) +
@@ -443,101 +398,22 @@ function showVehicleDetail(id) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderDrivers() {
   var dr = _D.drivers || [];
-  var style = _viewStyles.drivers || 'table';
-  var viewControlsHtml = 
-    '<div class="vt-group">' +
-      '<button class="vt-btn ' + (style === 'grid' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'grid\')" title="Grid View"><i class="fa-solid fa-th-large"></i></button>' +
-      '<button class="vt-btn ' + (style === 'list' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'list\')" title="List View"><i class="fa-solid fa-list"></i></button>' +
-      '<button class="vt-btn ' + (style === 'table' ? 'vt-active' : '') + '" onclick="setViewStyle(\'drivers\', \'table\')" title="Table View"><i class="fa-solid fa-table"></i></button>' +
-    '</div>';
-
-  var mainContentHtml = '';
-
-  if (style === 'table') {
-    mainContentHtml = '<div class="table-wrap"><table class="data-table" id="drContainer">' +
-      '<thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>License</th><th>Expiry</th><th>Blood</th><th>Status</th></tr></thead><tbody>' +
-      dr.map(function(d){
-        var licCls = dateClass(d.LicenseExpiry, 30);
-        var stCls  = d.Status==='Active'?'badge-green':'badge-red';
-        return '<tr onclick="showDriverDetail(\''+d.DriverID+'\')" style="cursor:pointer">' +
-          '<td><code>'+d.DriverID+'</code></td>' +
-          '<td><strong>'+d.Name+'</strong></td>' +
-          '<td>'+d.Mobile+'</td>' +
-          '<td>'+d.LicenseNo+'</td>' +
-          '<td class="'+licCls+'">'+d.LicenseExpiry+'</td>' +
-          '<td><span class="badge badge-blue">'+(d.BloodGroup||'—')+'</span></td>' +
-          '<td><span class="badge '+stCls+'">'+d.Status+'</span></td></tr>';
-      }).join('') + '</tbody></table></div>';
-  } else if (style === 'grid') {
-    mainContentHtml = '<div class="vc-grid" id="drContainer">' +
-      dr.map(function(d){
-        var stCls = d.Status==='Active'?'badge-green':'badge-red';
-        var iconGrad = d.Status==='Active'?'blue':'red';
-        return '<div class="vc-card" onclick="showDriverDetail(\''+d.DriverID+'\')">' +
-          '<div class="vc-card-head">' +
-            '<div class="vc-card-icon ' + iconGrad + '"><i class="fa-solid fa-user"></i></div>' +
-            '<span class="badge '+stCls+'">'+d.Status+'</span>' +
-          '</div>' +
-          '<div class="vc-plate">'+d.Name+'</div>' +
-          '<div class="vc-model">'+d.DriverID+' &middot; '+d.Mobile+'</div>' +
-          '<div class="vc-meta">' +
-            '<span><i class="fa-solid fa-id-card"></i> '+ d.LicenseNo +'</span>' +
-          '</div>' +
-          '<div class="vc-footer">' +
-            '<span><i class="fa-solid fa-droplet"></i> '+ (d.BloodGroup||'—') +'</span>' +
-            '<span><i class="fa-solid fa-calendar-days"></i> '+ (d.LicenseExpiry||'—') +'</span>' +
-          '</div>' +
-        '</div>';
-      }).join('') + '</div>';
-  } else if (style === 'list') {
-    mainContentHtml = '<div class="vc-list" id="drContainer">' +
-      dr.map(function(d){
-        var stCls = d.Status==='Active'?'badge-green':'badge-red';
-        var iconGrad = d.Status==='Active'?'blue':'red';
-        var licCls = dateClass(d.LicenseExpiry, 30);
-        return '<div class="vc-list-row" onclick="showDriverDetail(\''+d.DriverID+'\')">' +
-          '<div class="vc-list-icon ' + iconGrad + '"><i class="fa-solid fa-user"></i></div>' +
-          '<div class="vc-list-body">' +
-            '<div class="vc-list-title">'+d.Name+' <span class="badge '+stCls+'">'+d.Status+'</span></div>' +
-            '<div class="vc-list-sub">ID: '+d.DriverID+' &middot; Mobile: '+d.Mobile+'</div>' +
-          '</div>' +
-          '<div class="vc-list-info">' +
-            '<div class="vc-list-ins '+licCls+'">Lic: '+(d.LicenseExpiry||'—')+'</div>' +
-            '<div class="vc-list-ftg">Blood: '+(d.BloodGroup||'—')+'</div>' +
-          '</div>' +
-          '<div class="vc-list-arr"><i class="fa-solid fa-chevron-right"></i></div>' +
-        '</div>';
-      }).join('') + '</div>';
-  }
-
   return '<div class="toolbar">' +
-    '<div class="search-wrap">' +
-      '<i class="fa-solid fa-magnifying-glass"></i>' +
-      '<input id="drSearch" class="search-input" placeholder="Search driver..." oninput="filterTable(\'drContainer\',this.value)">' +
-    '</div>' +
-    viewControlsHtml +
+    '<input class="search-input" placeholder="Search driver..." oninput="filterTable(\'drTbl\',this.value)">' +
     '<button class="btn-primary" onclick="showAddDriverForm()">+ Add Driver</button></div>' +
-    mainContentHtml;
-}
-
-function showDriverDetail(id) {
-  var d = (_D.drivers||[]).find(function(x){ return x.DriverID===id; });
-  if (!d) return;
-  var stCls = d.Status==='Active'?'badge-green':'badge-red';
-  showModal('👷 ' + d.Name,
-    '<div class="detail-grid">' +
-    detailRow('Driver ID', d.DriverID) +
-    detailRow('Mobile', d.Mobile) +
-    detailRow('Status', '<span class="badge '+stCls+'">'+d.Status+'</span>') +
-    detailRow('License No', d.LicenseNo) +
-    detailRow('License Expiry', d.LicenseExpiry) +
-    detailRow('Blood Group', d.BloodGroup) +
-    detailRow('Aadhaar No', d.AadhaarNo) +
-    detailRow('Joining Date', d.JoiningDate) +
-    detailRow('Salary', d.Salary ? '₹'+fmt(d.Salary) : '—') +
-    detailRow('Emergency Contact', d.EmergencyContact) +
-    detailRow('Address', d.Address) +
-    '</div>', null, 'Close');
+    '<div class="table-wrap"><table class="data-table" id="drTbl">' +
+    '<thead><tr><th>ID</th><th>Name</th><th>Mobile</th><th>License</th><th>Expiry</th><th>Blood</th><th>Status</th></tr></thead><tbody>' +
+    dr.map(function(d){
+      var licCls = dateClass(d.LicenseExpiry, 30);
+      var stCls  = d.Status==='Active'?'badge-green':'badge-red';
+      return '<tr><td><code>'+d.DriverID+'</code></td>' +
+        '<td><strong>'+d.Name+'</strong></td>' +
+        '<td>'+d.Mobile+'</td>' +
+        '<td>'+d.LicenseNo+'</td>' +
+        '<td class="'+licCls+'">'+d.LicenseExpiry+'</td>' +
+        '<td><span class="badge badge-blue">'+(d.BloodGroup||'—')+'</span></td>' +
+        '<td><span class="badge '+stCls+'">'+d.Status+'</span></td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 
 function showAddDriverForm() {
@@ -575,8 +451,8 @@ function renderAttendance() {
   var today = new Date().toISOString().split('T')[0];
   var todayAtt = att.filter(function(a){ return a.Date===today; });
   return '<div class="toolbar">' +
-    '<span class="date-badge">📅 ' + today + '</span>' +
-    '<button class="btn-primary" onclick="showMarkAttendanceForm()">✅ Mark Attendance</button></div>' +
+    '<span class="date-badge">' + today + '</span>' +
+    '<button class="btn-primary" onclick="showMarkAttendanceForm()">Mark Attendance</button></div>' +
     '<div class="section-title">Today\'s Attendance (' + todayAtt.length + ' records)</div>' +
     '<div class="table-wrap"><table class="data-table">' +
     '<thead><tr><th>Driver ID</th><th>Vehicle</th><th>In Time</th><th>Status</th><th>Location</th></tr></thead><tbody>' +
@@ -624,7 +500,7 @@ function renderInspection() {
   return '<div class="toolbar">' +
     '<span class="toolbar-title">Daily Vehicle Inspection</span>' +
     '<button class="btn-primary" onclick="showInspectionForm()">+ New Inspection</button></div>' +
-    '<div class="empty-state">🔍 Tap <strong>+ New Inspection</strong> to start today\'s inspection checklist.</div>';
+    '<div class="empty-state">Tap <strong>+ New Inspection</strong> to start today\'s inspection checklist.</div>';
 }
 
 function showInspectionForm() {
@@ -634,7 +510,7 @@ function showInspectionForm() {
   var checkLabels = ['Fuel Level','Tyre Condition','Mirrors OK','Fastag Present','RC Present','Insurance Copy','PUC Copy'];
   var checkHtml = checks.map(function(c,i){
     return '<div class="form-group check-row"><label>'+checkLabels[i]+'</label>' +
-      '<select id="f_'+c+'"><option value="Yes">✅ Yes</option><option value="No">❌ No</option></select></div>';
+      '<select id="f_'+c+'"><option value="Yes">Yes</option><option value="No">No</option></select></div>';
   }).join('');
   showModal('Vehicle Inspection',
     '<div class="form-grid">' +
@@ -664,7 +540,7 @@ function showInspectionForm() {
 function renderCleaning() {
   return '<div class="toolbar"><span class="toolbar-title">Vehicle Cleaning Log</span>' +
     '<button class="btn-primary" onclick="showCleaningForm()">+ Add Cleaning Log</button></div>' +
-    '<div class="empty-state">🧹 Log daily cleaning records for each vehicle.</div>';
+    '<div class="empty-state">Log daily cleaning records for each vehicle.</div>';
 }
 
 function showCleaningForm() {
@@ -677,7 +553,7 @@ function showCleaningForm() {
     '<div class="form-group"><label>Vehicle*</label><select id="f_VehicleID"><option>'+vOpts+'</option></select></div>' +
     '<div class="form-group"><label>Driver*</label><select id="f_DriverID"><option>'+dOpts+'</option></select></div>' +
     '<div class="form-group"><label>Date</label><input id="f_Date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>' +
-    checks.map(function(c,i){ return '<div class="form-group"><label>'+labels[i]+'</label><select id="f_'+c+'"><option value="Yes">✅ Yes</option><option value="No">❌ No</option></select></div>'; }).join('') +
+    checks.map(function(c,i){ return '<div class="form-group"><label>'+labels[i]+'</label><select id="f_'+c+'"><option value="Yes">Yes</option><option value="No">No</option></select></div>'; }).join('') +
     '</div>',
     function() {
       var d = getFormData(['VehicleID','DriverID','Date'].concat(checks));
@@ -972,7 +848,7 @@ function renderFastag() {
   var vLow = (_D.vehicles||[]).filter(function(v){ return (parseFloat(v.FastagBalance)||0)<500; });
   return '<div class="toolbar"><span class="toolbar-title">Fastag Transactions</span>' +
     '<button class="btn-primary" onclick="showFastagRechargeForm()">+ Recharge</button></div>' +
-    (vLow.length ? '<div class="alert-banner">🔴 '+vLow.length+' vehicle(s) with low Fastag balance: ' +
+    (vLow.length ? '<div class="alert-banner">'+vLow.length+' vehicle(s) with low Fastag balance: ' +
       vLow.map(function(v){ return v.VehicleNo+' (₹'+v.FastagBalance+')'; }).join(', ') + '</div>' : '') +
     '<div class="table-wrap"><table class="data-table">' +
     '<thead><tr><th>ID</th><th>Vehicle</th><th>Date</th><th>Opening ₹</th><th>Recharge ₹</th><th>Closing ₹</th><th>Remarks</th></tr></thead><tbody>' +
@@ -1025,7 +901,7 @@ function renderReminders() {
         '<div class="lc-sub">Due: ' + r.ReminderDate + '</div></div>' +
         '<div class="lc-right"><span class="badge '+pc+'">'+r.Priority+'</span></div></div>';
     }).join('') +
-    (rem.length===0?'<div class="empty-state">✅ No active reminders. Fleet is in good shape!</div>':'') +
+    (rem.length===0?'<div class="empty-state">No active reminders. Fleet is in good shape!</div>':'') +
     '</div>';
 }
 
@@ -1034,19 +910,19 @@ function renderReminders() {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderReports() {
   return '<div class="reports-grid">' +
-    reportCard('⛽','Fuel Report','Monthly fuel cost and mileage summary','showFuelReport()') +
-    reportCard('🔧','Service Report','Service history and costs per vehicle','showServiceReport()') +
-    reportCard('🚗','Fleet Status','Active, idle and under-service vehicles','showFleetReport()') +
-    reportCard('👷','Driver Report','Attendance and performance summary','showDriverReport()') +
-    reportCard('💰','Expense Report','Category-wise expense breakdown','showExpenseReport()') +
-    reportCard('🚛','Dispatch Report','Material delivery and transit status','showDispatchReport()') +
+    reportCard('fuel','Fuel Report','Monthly fuel cost and mileage summary','showFuelReport()') +
+    reportCard('wrench','Service Report','Service history and costs per vehicle','showServiceReport()') +
+    reportCard('car','Fleet Status','Active, idle and under-service vehicles','showFleetReport()') +
+    reportCard('driver','Driver Report','Attendance and performance summary','showDriverReport()') +
+    reportCard('wallet','Expense Report','Category-wise expense breakdown','showExpenseReport()') +
+    reportCard('truck','Dispatch Report','Material delivery and transit status','showDispatchReport()') +
     '</div>';
 }
 
-function reportCard(icon,title,desc,onclick){
+function reportCard(iconKey,title,desc,onclick){
   return '<div class="report-card" onclick="'+onclick+'">' +
-    '<div class="rc-icon">'+icon+'</div><div class="rc-title">'+title+'</div>' +
-    '<div class="rc-desc">'+desc+'</div><div class="rc-arrow">→</div></div>';
+    '<div class="rc-icon">'+icon(iconKey)+'</div><div class="rc-title">'+title+'</div>' +
+    '<div class="rc-desc">'+desc+'</div><div class="rc-arrow">'+icon('arrow')+'</div></div>';
 }
 
 function showFuelReport() {
@@ -1064,7 +940,7 @@ function showFuelReport() {
     var mileage = b.qty>0?(b.km/b.qty).toFixed(1):'—';
     return '<tr><td><code>'+vid+'</code></td><td>'+b.qty.toFixed(1)+'</td><td>₹'+fmt(b.amt)+'</td><td>'+b.km.toFixed(0)+' km</td><td>'+mileage+' km/l</td></tr>';
   }).join('');
-  showModal('⛽ Fuel Report — All Time',
+  showModal('Fuel Report — All Time',
     '<div class="table-wrap"><table class="data-table"><thead><tr><th>Vehicle</th><th>Total Qty (L)</th><th>Total Cost ₹</th><th>Total KM</th><th>Avg Mileage</th></tr></thead><tbody>'+rows+'</tbody></table></div>',
     null, 'Close');
 }
@@ -1077,7 +953,7 @@ function showFleetReport() {
       '<td>'+x.Brand+' '+x.Model+'</td><td><span class="badge '+cls+'">'+x.Status+'</span></td>' +
       '<td>'+x.InsuranceExpiry+'</td><td>'+x.PUCExpiry+'</td><td>₹'+x.FastagBalance+'</td></tr>';
   }).join('');
-  showModal('🚗 Fleet Status Report',
+  showModal('Fleet Status Report',
     '<div class="table-wrap"><table class="data-table"><thead><tr><th>ID</th><th>Number</th><th>Vehicle</th><th>Status</th><th>Insurance</th><th>PUC</th><th>Fastag ₹</th></tr></thead><tbody>'+rows+'</tbody></table></div>',
     null,'Close');
 }
@@ -1186,11 +1062,11 @@ function getFormData(fields) {
   return d;
 }
 
-function filterTable(containerId, query) {
+function filterTable(tableId, query) {
   var q = query.toLowerCase();
-  var items = document.querySelectorAll('#' + containerId + ' tbody tr, #' + containerId + ' .vc-card, #' + containerId + ' .vc-list-row');
-  items.forEach(function(item) {
-    item.style.display = item.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+  var rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+  rows.forEach(function(row) {
+    row.style.display = row.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
   });
 }
 
@@ -1223,17 +1099,6 @@ function toggleSidebar() {
   ov.style.display = isOpen ? 'none' : 'block';
 }
 
-function toggleSidebarCollapse() {
-  var nav = document.getElementById('sideNav');
-  var btn = document.getElementById('sbCollapseBtn');
-  var isCollapsed = nav.classList.toggle('sb-collapsed');
-  localStorage.setItem('ise_sb_collapsed', isCollapsed ? 'true' : 'false');
-  if (btn) {
-    btn.innerHTML = isCollapsed ? '<i class="fa-solid fa-chevron-right"></i>' : '<i class="fa-solid fa-chevron-left"></i>';
-    btn.title = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
-  }
-}
-
 // ── ISE VOMS: Override renderDashboard with branded welcome ─────────────────
 var _origRenderDashboard = renderDashboard;
 renderDashboard = function() {
@@ -1242,9 +1107,9 @@ renderDashboard = function() {
   var dateStr  = today.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   var welcomeHtml =
     '<div class="dash-welcome">' +
-    '<div class="dash-welcome-icon"><i class="fa-solid fa-industry"></i></div>' +
+    '<div class="dash-welcome-icon">' + icon('building') + '</div>' +
     '<div><div class="dash-welcome-title">' + greeting + ', ' + ((_U&&_U.name)||'') + '</div>' +
-    '<div class="dash-welcome-sub">' + dateStr + ' &nbsp;&middot;&nbsp; Mandi Gobindgarh, Punjab</div></div>' +
+    '<div class="dash-welcome-sub">' + dateStr + ' &nbsp;·&nbsp; Mandi Gobindgarh, Punjab</div></div>' +
     '<span class="dash-welcome-badge">ISE Fleet</span>' +
     '</div>';
   return welcomeHtml + _origRenderDashboard();
@@ -1275,12 +1140,10 @@ renderNav = function() {
   var primary = items.slice(0, 4);
   var html = primary.map(function(n) {
     return '<div class="bnav-item" data-page="' + n.id + '" onclick="navigateTo(\'' + n.id + '\')">' +
-      '<div class="bnav-icon-box"><i class="' + n.icon + '"></i></div>' +
-      '<span class="bnav-label">' + n.label + '</span></div>';
+      '<span class="bnav-icon">' + icon(n.icon) + '</span><span class="bnav-label">' + n.label + '</span></div>';
   }).join('') +
   '<div class="bnav-item" data-page="__more__" onclick="toggleSidebar()">' +
-    '<div class="bnav-icon-box"><i class="fa-solid fa-bars"></i></div>' +
-    '<span class="bnav-label">More</span></div>';
+    '<span class="bnav-icon">' + icon('menu') + '</span><span class="bnav-label">More</span></div>';
   var el = document.getElementById('bottomNavItems');
   if (el) el.innerHTML = html;
 };
