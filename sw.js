@@ -1,4 +1,4 @@
-var CACHE = 'ise-voms-v5';
+var CACHE = 'ise-voms-v6';
 var SHELL = ['./', './index.html', './app.js', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function(e) {
